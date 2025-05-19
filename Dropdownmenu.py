@@ -11,12 +11,16 @@ class DropdownMenu(ur.Entity):
     :commands: A list of functions to execute when an option is selected, if not given, it will print the selected option.
     :position: The position of the dropdown menu in the world.
     :scale: The scale of the dropdown menu.
-    :color: Not implemented. Why would you want to change the color?! It is beautiful as it is.
+    :bg_color: The background color of the dropdown menu.
+    :fg_color: The foreground color of the dropdown menu.
+    :primary_color: The primary color of the options in the dropdown menu.
+    :secondary_color: The secondary color of the options in the dropdown menu.
+    :highlight_color: The color of the button when hovered over.
     :border: Whether to add a border around the dropdown menu.
     :lr_border: Whether to add a border on the left and right side of the dropdown menu. Is ignored if border is set to True.
     :change_color: Whether to change the color of the options in the dropdown menu. If set to True, it will alternate between #262626 and #333333.
     """
-    def __init__(self, parent:ur.Entity=ur.scene, text:str="Select Option", options:list=["Option1", "Option2"], commands:list=[], position:tuple|int=(0, 0), scale:tuple|int=(4, 1), color:ur.color=ur.color.white, border:bool=True, lr_border:bool=True, change_color:bool=True, **kwargs):
+    def __init__(self, parent:ur.Entity=ur.scene, text:str="Select Option", options:list=["Option1", "Option2"], commands:list=[], position:tuple|int=(0, 0), scale:tuple|int=(4, 1), highlight_color="#5e5e5e", bg_color:str="#5e5e5e", fg_color:str="#333333", primary_color:str="#262626", secondary_color:str="#333333", border:bool=True, lr_border:bool=True, change_color:bool=True, **kwargs):
         super().__init__(parent=parent, position=position, scale=scale)
         if type(position) == int:
             position = (position, position)
@@ -43,9 +47,10 @@ class DropdownMenu(ur.Entity):
         self.lr_border = lr_border
         self.options = options
         self.commands = commands
-        color = "#262626"
+        color = primary_color
+        self.highlight_color = highlight_color
 
-        self.widget()
+        self.widget(fg_color, bg_color)
         # Create dropdown menu as a local entity with zero position offset
         # This ensures consistent positioning regardless of the parent's position
         self.dropdown_menu = ur.Entity(parent=self, enabled=False, position=(0, 0, 0))
@@ -56,26 +61,25 @@ class DropdownMenu(ur.Entity):
             raise ValueError("More commands than options")
         for x, i in enumerate(map(lambda x, y: (x, y), self.options, self.commands)):
             if change_color:
-                color = "#262626" if color == "#333333" else "#333333"
-                print(color)
+                color = primary_color if color == secondary_color else secondary_color
             c = ur.color.hex(color)
             self.add_option(i[0], i[1], x, c)
         num_options = len(self.options)
         
         if self.border_value:
-            self.border((4, 0.1), (0, -1.1, -0.01))
-            self.border((4, 0.1), (0, 0.1-(num_options + 1.2), -0.01)) 
-            self.border((0.1, num_options + 0.1), (-4/2 -0.05, -(num_options + 0.2)/2 - 1, -0.01))
-            self.border((0.1, num_options + 0.1), (4/2, -(num_options + 0.2)/2 - 1, -0.01))
+            self.border((4, 0.1), (0, -0.7, -0.01))
+            self.border((4, 0.1), (0, 0.1-(num_options + .8), -0.01)) 
+            self.border((0.1, num_options + 0.1), (-4/2 -0.05, -(num_options - 0.6)/2 - 1, -0.01))
+            self.border((0.1, num_options + 0.1), (4/2, -(num_options - 0.6)/2 - 1, -0.01))
             
         if not self.border_value and self.lr_border:
-            self.border((0.1, num_options), (-4/2 -0.05, -(num_options + 0.2)/2 - 1, -0.01))
-            self.border((0.1, num_options), (4/2, -(num_options + 0.2)/2 - 1, -0.01))
+            self.border((0.1, num_options), (-4/2 -0.05, -(num_options - 0.6)/2 - 1, -0.01))
+            self.border((0.1, num_options), (4/2, -(num_options - 0.6)/2 - 1, -0.01))
 
 
-    def widget(self):
-        bg = ur.Entity(parent=self, model=ur.Quad(aspect=1, radius=0.2, scale=(4, 1)), color="#5e5e5e", position=(0, 0, 0))
-        fg = ur.Entity(parent=self, model=ur.Quad(aspect=1, radius=0.2, scale=(3.9, 0.9)), color="#333333", position=(0, 0, -0.001))
+    def widget(self, fg_color, bg_color):
+        bg = ur.Entity(parent=self, model=ur.Quad(aspect=1, radius=0.2, scale=(4, 1)), color=bg_color, position=(0, 0, 0))
+        fg = ur.Entity(parent=self, model=ur.Quad(aspect=1, radius=0.2, scale=(3.9, 0.9)), color=fg_color, position=(0, 0, -0.001))
         self.text = ur.Text(
             parent=self,
             text=self.button_text,  # Use the text from the constructor
@@ -91,9 +95,9 @@ class DropdownMenu(ur.Entity):
             text='v',
             text_size=self.x_scale*0.375,
             position=(self.x_scale*(4/self.x_scale)*0.37, 0, -0.002),
-            color="#5e5e5e",
+            color=bg_color,
             on_click=self.toggle,
-            highlight_color=ur.color.hex("#5e5e5e"),
+            highlight_color=ur.color.hex(self.highlight_color),
         )
         
         
@@ -104,7 +108,7 @@ class DropdownMenu(ur.Entity):
             text=text,
             text_size=0.375*self.x_scale,
             parent=self.dropdown_menu,
-            position=(0, -(i + 1.6), 0),  # Original button positioning
+            position=(0, -(i + 1.2), 0),  # Original button positioning
             scale=(4, 1),
             model='quad',
             color=color,  # Button color
